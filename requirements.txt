@@ -1,1 +1,16 @@
+# requirements.txt
+
+# For AI model training and inference (YOLOv8)
+ultralytics
+
+# For downloading and managing the image dataset
 fiftyone
+
+# For camera access and video processing
+opencv-python
+
+# For running the simple API server in the prototype
+flask
+
+# For future communication with hardware like a PLC
+pyserial

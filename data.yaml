@@ -1,0 +1,22 @@
+# data.yaml: Configuration for YOLOv8 training
+
+train: ./yolo_dataset/images/train
+val: ./yolo_dataset/images/val
+
+# --- Class Information ---
+
+# Number of classes
+nc: 10
+
+# Class names in the exact, correct order
+names:
+  - Chicken
+  - Raccoon
+  - Fox
+  - Carnivore
+  - Skunk
+  - Cat
+  - Dog
+  - Squirrel
+  - Rabbit
+  - Deer
