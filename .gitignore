@@ -7,3 +7,6 @@ __pycache__/
 
 # Environment file for secrets
 .env
+
+# Datasets
+/yolo_dataset/

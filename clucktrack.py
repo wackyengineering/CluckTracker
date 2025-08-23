@@ -1,49 +1,73 @@
 import fiftyone as fo
 import fiftyone.zoo as foz
 
-def download_dataset():
+# --- Define Animal Classes by Category ---
+
+# The primary animal we want to protect
+TARGET_ANIMAL = ["Chicken"]
+
+# Animals that are a clear and immediate danger
+HIGH_RISK_PREDATORS = [
+    "Raccoon",
+    "Fox",
+    "Carnivore", # Proxy for Canidae/Wolf/Coyote
+    "Skunk",
+]
+
+# Animals that could potentially harm chickens and should be monitored
+POTENTIAL_THREATS = [
+    "Cat",
+    "Dog",
+]
+
+# Animals that are generally harmless
+HARMLESS_VISITORS = [
+    "Squirrel",
+    "Rabbit",
+    "Deer",
+]
+
+# Combine all lists into the final list for the dataset
+ALL_CLASSES = TARGET_ANIMAL + HIGH_RISK_PREDATORS + POTENTIAL_THREATS + HARMLESS_VISITORS
+
+def download_dataset(
+    classes: list[str],
+    dataset_name: str = "clucktrack-dataset-v1",
+    max_samples: int = 10000,
+) -> fo.Dataset:
+    """Downloads a dataset from the FiftyOne Zoo for the CluckTrack project.
+
+    Args:
+        classes: A list of class names to include in the dataset.
+        dataset_name: The name to assign to the downloaded dataset.
+        max_samples: The maximum number of samples to download.
+
+    Returns:
+        The downloaded FiftyOne dataset.
     """
-    Downloads and sets up the initial dataset for the CluckTrack project
-    using FiftyOne Zoo.
-    """
-    # --- Define Animal Classes by Category ---
-
-    # The primary animal we want to protect
-    target_animal = ["Chicken"]
-
-    # Animals that pose a potential threat
-    predators_and_pests = [
-        "Raccoon", "Fox", "Wolf", "Coyote", "Hawk", "Opossum", "Skunk",
-    ]
-
-    # Common, non-threatening animals to prevent false alarms
-    harmless_visitors = [
-        "Cat", "Dog", "Squirrel", "Rabbit", "Deer",
-    ]
-
-    # Combine all lists into the final list for the dataset
-    all_classes = target_animal + predators_and_pests + harmless_visitors
-
     print("Downloading dataset with the following classes:")
-    print(all_classes)
+    print(classes)
 
     # --- Download and Launch the Dataset ---
     dataset = foz.load_zoo_dataset(
         "open-images-v7",
         splits=["train", "validation"],
         label_types=["detections"],
-        classes=all_classes,
-        max_samples=3000,
-        dataset_name="clucktrack-dataset-v1"
+        classes=classes,
+        max_samples=max_samples,
+        dataset_name=dataset_name,
     )
+
+    dataset.persistent = True
+    dataset.save() # Explicitly save the dataset to the database
 
     print("Dataset download complete.")
     return dataset
 
 
 if __name__ == "__main__":
-    # Download the dataset
-    clucktrack_dataset = download_dataset()
+    # Download the dataset using the predefined classes
+    clucktrack_dataset = download_dataset(classes=ALL_CLASSES)
 
     # Launch the FiftyOne App to view your final dataset
     # This will open in your browser
