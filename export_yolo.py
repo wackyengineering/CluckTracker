@@ -1,64 +1,80 @@
 import fiftyone as fo
-import random
 import os
 import shutil
+import random
+from clucktrack import ALL_CLASSES
 
 # --- Configuration ---
 DATASET_NAME = "clucktrack-dataset-v1"
-EXPORT_DIR = "./yolo_dataset"
-TRAIN_SPLIT_PERCENT = 0.8 # 80% for training, 20% for validation
+EXPORT_DIR = "./yolo_dataset"  # The script will create this
+TRAIN_SPLIT_PERCENT = 0.8
+
+print("--- STARTING FULLY MANUAL EXPORT ---")
 
 # --- 1. Clean Slate ---
-# Forcefully delete the old export directory to prevent any caching issues
 if os.path.exists(EXPORT_DIR):
     shutil.rmtree(EXPORT_DIR)
     print(f"Removed old directory: {EXPORT_DIR}")
 
-# --- 2. Load Dataset ---
-print(f"Loading dataset '{DATASET_NAME}'...")
+# --- 2. Create Directory Structure ---
+print("Creating new directory structure...")
+os.makedirs(f"{EXPORT_DIR}/images/train")
+os.makedirs(f"{EXPORT_DIR}/images/val")
+os.makedirs(f"{EXPORT_DIR}/labels/train")
+os.makedirs(f"{EXPORT_DIR}/labels/val")
+print("Directory structure created.")
+
+# --- 3. Load Dataset ---
 dataset = fo.load_dataset(DATASET_NAME)
-dataset.persistent = True # Ensure it's persistent
+class_map = {name: i for i, name in enumerate(ALL_CLASSES)}
 
-# --- 3. Manual, Foolproof Splitting ---
-print("Performing a manual, foolproof data split...")
-
-# Get a shuffled list of all sample IDs
+# --- 4. Manual Splitting ---
 sample_ids = dataset.values("id")
 random.shuffle(sample_ids)
-
-# Manually calculate the split point
 split_index = int(TRAIN_SPLIT_PERCENT * len(sample_ids))
-
-# Divide the IDs into train and validation sets
 train_ids = sample_ids[:split_index]
 val_ids = sample_ids[split_index:]
 
-# Create two 'views' into the dataset based on our ID lists
-train_view = dataset.select(train_ids)
-val_view = dataset.select(val_ids)
+# --- 5. Manual File Writing Loop ---
+print(f"Manually processing {len(dataset)} samples...")
+for sample in dataset.iter_samples(progress=True):
+    # Determine which split this sample belongs to
+    if sample.id in train_ids:
+        split = "train"
+    elif sample.id in val_ids:
+        split = "val"
+    else:
+        continue # Should not happen
 
-# Forcefully assign the 'split' field to each view
-# This is the most critical step
-train_view.set_values("split", "train")
-val_view.set_values("split", "val")
+    # --- Copy Image File ---
+    source_path = sample.filepath
+    file_name = os.path.basename(source_path)
+    destination_path = f"{EXPORT_DIR}/images/{split}/{file_name}"
+    shutil.copy(source_path, destination_path)
 
-# Save the changes to the dataset
-dataset.save()
+    # --- Create and Write Label File ---
+    label_name = os.path.splitext(file_name)[0] + ".txt"
+    label_path = f"{EXPORT_DIR}/labels/{split}/{label_name}"
+    
+    with open(label_path, "w") as f:
+        # Check if sample has detections
+        if sample.ground_truth is None or sample.ground_truth.detections is None:
+            continue
+            
+        for det in sample.ground_truth.detections:
+            # Get class index
+            class_index = class_map.get(det.label)
+            if class_index is None:
+                continue
 
-print(f"Manual split complete.")
-print(f"  - Samples in train set: {len(train_view)}")
-print(f"  - Samples in val set:   {len(val_view)}")
+            # Bounding box is [x_min, y_min, width, height]
+            box = det.bounding_box
+            x_center = box[0] + box[2] / 2
+            y_center = box[1] + box[3] / 2
+            width = box[2]
+            height = box[3]
 
+            f.write(f"{class_index} {x_center} {y_center} {width} {height}\n")
 
-# --- 4. Export the Entire Dataset ---
-from clucktrack import ALL_CLASSES # Import your class list
-
-print("\n--- Starting final YOLO format export ---")
-dataset.export(
-    export_dir=EXPORT_DIR,
-    dataset_type=fo.types.YOLOv5Dataset,
-    label_field="ground_truth",
-    classes=ALL_CLASSES,
-    # The exporter will use the 'split' field we just created
-)
-print(f"--- Export finished successfully to {EXPORT_DIR} ---")
+print("\n--- MANUAL EXPORT COMPLETE ---")
+print(f"Please check the '{EXPORT_DIR}' folder.")
