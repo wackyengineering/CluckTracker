@@ -1,12 +1,34 @@
 # Python virtual environment
 venv/
+.venv/
 
-# Python cache files
+# Python cache files & artifacts
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 
-# Environment file for secrets
-.env
+# Build and distribution artifacts
+build/
+dist/
+*.egg-info/
 
-# Datasets
+# Datasets (raw and zipped)
 /yolo_dataset/
+*.zip
+
+# Trained Models & Logs
+# This is the most important new one
+/runs/
+/models/
+*.pt
+
+# IDE / OS Specific
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env

@@ -1,0 +1,14 @@
+names:
+- Chicken
+- Raccoon
+- Fox
+- Carnivore
+- Skunk
+- Cat
+- Dog
+- Squirrel
+- Rabbit
+- Deer
+nc: 10
+train: /content/yolo_dataset/images/train
+val: /content/yolo_dataset/images/val
